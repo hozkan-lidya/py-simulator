@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+six = "*"
+requests = "*"
+numpy = "*"
+pandas = "*"
+sortedcontainers = "*"
+
+# pytz = "*"
+# vaex = "*"
+# ipykernel = "*"
+# statsmodels = "*"
+# jupyter = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"

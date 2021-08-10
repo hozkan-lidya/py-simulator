@@ -1,0 +1,58 @@
+{
+  "workbench.sideBar.location": "left",
+  "files.exclude": {
+      "**/.git*": false,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/.DS_Store": true,
+      "**/.tags*": true,
+"**/.pyc": true,
+      ".catkin_tools/**/packages": true,
+      "build": true,
+      "devel": true,
+      "logs": true,
+      "src/external": true,
+      "**/CMakeLists.txt.user": true,
+      "**/__pycache__": true
+  },
+  "editor.fontFamily": "'Ubuntu Mono', monospace",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.rulers": [
+      100
+  ],
+
+  "[python]": {
+      "editor.tabSize": 2
+  },
+
+  "files.trimTrailingWhitespace": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+
+  "window.zoomLevel": 0,
+
+  "clang-format.executable": "/usr/bin/clang-format-3.8",
+  "clang-format.style": "Google",
+  "clang-format.language.javascript.enable": false,
+
+  "prettier.printWidth": 100,
+  "prettier.singleQuote": true,
+  "prettier.bracketSpacing": true,
+
+  "editor.multiCursorModifier": "alt",
+  "git.ignoreLegacyWarning": true,
+  "workbench.startupEditor": "newUntitledFile",
+
+//   "eslint.nodePath": "/home/viktor/.nvm/versions/node/v7.4.0/bin/node",
+
+  "python.linting.pylintArgs": [
+      "--load-plugins pylint-django"
+],
+"python.defaultInterpreterPath": "/usr/bin/python3.9",
+"python.languageServer": "Pylance",
+"jupyter.jupyterServerType": "local",
+"DockerRun.DisableAutoGenerateConfig": true
+
+}
