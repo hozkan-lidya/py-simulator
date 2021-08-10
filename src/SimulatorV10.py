@@ -1,11 +1,14 @@
 import sys, os.path
+src_dir = (os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+sys.path.append(src_dir)
+
+import aux as aux
+from Side import Side, BUY, SELL
+
 import pandas as pd
 import numpy as np
 
-src_dir = (os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
-sys.path.append(src_dir)
-# from DetailedLob import DetailedLob
-
+algono =1
 ### Simulator ###
 class simulatorV10:
   def __init__(self):
@@ -29,10 +32,10 @@ class simulatorV10:
 
   ### Simulator Main Functions ###
   def create_queue(self, book, symbol, side, price):
-    order_side = ('ask' if side == 'S' else 'bid')
-    if side == 'S':
+    order_side = Side(ord(side))
+    if order_side == Side.SELL:
       price_levels = len([i for i in list(book.details.mbp[symbol][order_side].keys()) if i < price])
-    elif side == 'B':
+    else:
       price_levels = len([i for i in list(book.details.mbp[symbol][order_side].keys()) if i > price])
     # ids = [i for pri in price_levels for i in book.details.mbo[symbol][order_side][pri].keys()]
     # quantities = [i[0] for pri in price_levels for i in book.details.mbo[symbol][order_side][pri].values()]
@@ -47,11 +50,7 @@ class simulatorV10:
     queue = pd.DataFrame(zip(ids, quantities), columns=['id', 'quantity'])
     return queue, price_levels
 
-  def send_order(self, row, algono,
-                 sendsymbol, sendside,
-                 sendprice, sendsize,
-                 sendordertype, sendordermessage,
-                 *args):
+  def send_order(self, row, algono, sendsymbol, sendside, sendprice, sendsize, sendordertype, sendordermessage, *args):
     '''
     sendmultiplier  --> symbol multiplier
      sendprice     --> order price
@@ -136,9 +135,9 @@ class simulatorV10:
         if next_epoch_nano >= order_iter.orders_eventtime + data_elapsedtime:
           # if len(orderresponse) > 0 :
           #   orderresponse = orderresponse[orderresponse['orderresponse_id'] != order_iter.orders_sendintorderid]  # drop the order in the loop
-          # side = ('bid' if order_iter.orders_side == 'B' else 'ask')
+          # side = (BUY if order_iter.orders_side == 'B' else SELL)
           tob_bid_price, tob_ask_price = aux.take_bid_ask_price(book, order_iter.orders_symbol)
-          crossed_side = ('bid' if order_iter.orders_side == 'S' else 'ask')
+          crossed_side = (BUY if order_iter.orders_side == 'S' else SELL)
           order_size = order_iter.orders_size
           execution = 'not completed'
           price_level_counter = 0
@@ -149,15 +148,15 @@ class simulatorV10:
             if ((order_iter.orders_side == 'B') and (order_iter.orders_price >= tob_ask_price)) or (
                 (order_iter.orders_side == 'S') and (order_iter.orders_price <= tob_bid_price)):
               if order_iter.orders_side == 'B':
-                price_levels = [i for i in list(book.details.mbp[order_iter.orders_symbol]['ask'].keys()) if
+                price_levels = [i for i in list(book.details.mbp[order_iter.orders_symbol][SELL].keys()) if
                         i <= order_iter.orders_price]
-                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol]['ask'][pri].values()])
-                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol]['ask'][pri].values()])
+                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol][SELL][pri].values()])
+                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol][SELL][pri].values()])
 
               elif order_iter.orders_side == 'S':
-                price_levels = [i for i in list(book.details.mbp[order_iter.orders_symbol]['bid'].keys()) if
+                price_levels = [i for i in list(book.details.mbp[order_iter.orders_symbol][BUY].keys()) if
                         i >= order_iter.orders_price]
-                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol]['bid'][pri].values()])
+                # booksize = sum([i[0] for pri in price_levels for i in book.details.mbo[order_iter.orders_symbol][BUY][pri].values()])
 
               while (execution == 'not completed') and (price_level_counter < len(price_levels)):
                 level_price = list(book.details.mbp[order_iter.orders_symbol][crossed_side].keys())[
@@ -298,7 +297,7 @@ class simulatorV10:
     id = order_info.orders_intorderid
     message = order_info.orders_message
     tob_bid_price, tob_ask_price = aux.take_bid_ask_price(book, symbol)
-    book_side = ('bid' if side == 'B' else 'ask')
+    book_side = (BUY if side == 'B' else SELL)
     prev_order_id = -99
 
     if message in ['cancel', 'replace']:
@@ -356,7 +355,7 @@ class simulatorV10:
     # for algono in list_algono:  # Activate if more than one algo in simulator
     #   row_execution_quantity = row.Quantity
     execution_allowed = True
-    row_side = ('ask' if row.Side == 'S' else 'bid')
+    row_side = (SELL if row.Side == 'S' else BUY)
     if row.MessageType == 'A': row_price = row.Price
     elif row.MessageType in ['D', 'E']: row_price = book.details.id_to_price[row.mbp_id][row.OrderID, row_side]
 
@@ -365,7 +364,7 @@ class simulatorV10:
 
       for mm_iter in self.mm[(self.mm['mm_symbol'] == row.mbp_id) & (self.mm['mm_side'] == row.Side)].itertuples(index=True):
         mm_iter_index = self.mm[self.mm['mm_orderid'] == mm_iter.mm_orderid].index.values[0]
-        mm_order_side = ('ask' if mm_iter.mm_side == 'S' else 'bid')
+        mm_order_side = (SELL if mm_iter.mm_side == 'S' else BUY)
         mm_iter_queue = mm_iter.queue
         tob_bid_price, tob_ask_price = aux.take_bid_ask_price(book, mm_iter.mm_symbol)
 
@@ -377,34 +376,26 @@ class simulatorV10:
             if row.Quantity >= mm_iter.mm_size:  # Full Execution of MM Order
               self.mm = self.mm[self.mm['mm_orderid'] != mm_iter.mm_orderid]
               self.mm = self.mm.sort_index().reset_index(drop=True)
-              self.order_response_full_execution(row.epoch_nano,
-                                                 algono,
-                                                 mm_iter.mm_symbol,
-                                                 mm_iter.mm_orderid,
-                                                 mm_iter.mm_side,
-                                                 mm_iter.mm_price,
-                                                 mm_iter.mm_size,
-                                                 mm_iter.mm_type)
+              self.order_response_full_execution(row.epoch_nano, mm_iter.mm_algono,mm_iter.mm_symbol, mm_iter.mm_orderid,
+                                                     mm_iter.mm_side,
+                                                     mm_iter.mm_price,
+                                                     mm_iter.mm_size,
+                                                     mm_iter.mm_type)
             elif row.Quantity < mm_iter.mm_size:  # Partial Execution of MM Order
               self.mm.at[self.mm[self.mm['mm_orderid'] == mm_iter.mm_orderid].index.values[0], 'mm_size'] = mm_iter.mm_size - row.Quantity
               execution_size = row.Quantity
-              self.order_response_partial_execution(row.epoch_nano,
-                                                    algono,
-                                                    mm_iter.mm_symbol,
-                                                    mm_iter.mm_orderid,
-                                                    mm_iter.mm_side,
-                                                    mm_iter.mm_price,
-                                                    execution_size,
-                                                    mm_iter.mm_type)
+              self.order_response_partial_execution(row.epoch_nano, mm_iter.mm_algono,mm_iter.mm_symbol,mm_iter.mm_orderid,
+                                                      mm_iter.mm_side,
+                                                      mm_iter.mm_price,
+                                                      execution_size,
+                                                      mm_iter.mm_type)
             execution_allowed = False
             continue
 
           # Que Update
         # if ((row.MessageType in ['D', 'E']) & (row.OrderID in mm_iter_queue.id.values)) or ((row.MessageType == 'A') & (row.Price == mm_iter.mm_price)):
         if ((row.MessageType in ['D', 'E']) and (row_price == mm_iter.mm_price)) or \
-            ((row.MessageType == 'A')
-              and (((mm_iter.mm_side == 'S')
-              and (row_price <= mm_iter.mm_price)) or ((mm_iter.mm_side == 'B') and (row_price >= mm_iter.mm_price)))):
+            ((row.MessageType == 'A') and (((mm_iter.mm_side == 'S') and (row_price <= mm_iter.mm_price)) or ((mm_iter.mm_side == 'B') and (row_price >= mm_iter.mm_price)))):
           # if (row.MessageType in ['D', 'E']) & (row.OrderID in mm_iter_queue.id.values):  # ONEMLI burda price levels karsilastirmasina gerek yok & (book.details.id_to_price[row.mbp_id][(row.OrderID, row_side)] in price_levels)
           if row.MessageType == 'D':
             mm_iter_queue = mm_iter_queue[mm_iter_queue['id'] != row.OrderID]
@@ -450,7 +441,7 @@ class simulatorV10:
              ((mm_iter.mm_side == 'B') and (mm_iter.mm_price >= tob_ask_price))):
           self.mm = self.mm[self.mm['mm_orderid'] != mm_iter.mm_orderid]
           self.mm = self.mm.sort_index().reset_index(drop=True)
-          self.order_response_full_execution(row.epoch_nano, algono, mm_iter.mm_symbol,mm_iter.mm_orderid,
+          self.order_response_full_execution(row.epoch_nano, mm_iter.mm_algono, mm_iter.mm_symbol,mm_iter.mm_orderid,
                                                  mm_iter.mm_side,
                                                  mm_iter.mm_price,
                                                  mm_iter.mm_size,
@@ -475,7 +466,7 @@ class simulatorV10:
                                                      messagetype]
     # return orderresponse
 
-  def fill_in_executions_array(self, eventtime, algono, symbol, id, side, price, executed_size):
+  def fill_in_executions_array(self, eventtime, algono, symbol, price, executed_size, side,id):
     # in_position = True
     # if execution_quantity >= size:
     #   in_position = False

@@ -1,3 +1,7 @@
+import sys, os.path
+src_dir = (os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+sys.path.append(src_dir)
+
 from sortedcontainers import SortedList
 from collections import OrderedDict
 from operator import neg
@@ -5,20 +9,14 @@ from enum import IntEnum
 # import pandas as pd
 from Side import BUY, SELL ,Side
 
-# class Side(IntEnum):
-#   BUY  = ord('B')
-#   SELL = ord('S')
-
-
 class DetailedLob:
-  # Aliasing
 
   def __init__(self):
     self.mbo = {None: {BUY: {}, SELL: {}}}  # MBO - most detailed
-    self.id_to_price   : dict[int,int] = {None: {}}
-    self.sorted_prices : dict[int,dict[Side, SortedList]] \
+    self.id_to_price   : dict[int, int] = {None: {}}
+    self.sorted_prices : dict[int, dict[Side, SortedList]] \
         = {None: {BUY: SortedList(key=neg), SELL: SortedList()}}
-    self.mbp : dict[int,dict[str, dict]] = {None: {BUY: {}, SELL: {}}}  # MBP
+    self.mbp : dict[int, dict[str, dict]] = {None: {BUY: {}, SELL: {}}}  # MBP
 
   def insert_add(self, itch_message):
     side = Side(ord(itch_message.Side))
@@ -27,6 +25,7 @@ class DetailedLob:
     quantity = itch_message.Quantity
     rank = itch_message.Rank
     symbol_id = itch_message.mbp_id
+
     if symbol_id not in self.mbp.keys():
       self.mbo.update({symbol_id: {BUY: {}, SELL: {}}})  # MBO - most detailed
       self.id_to_price.update({symbol_id: {}})
@@ -34,6 +33,7 @@ class DetailedLob:
       self.mbp.update({symbol_id: {BUY: {}, SELL: {}}})  # MBP
     else:
       pass
+
     if price in self.mbp[symbol_id][side].keys():
       self.mbo[symbol_id][side][price].update({order_id: [quantity, rank]})
       self.mbp[symbol_id][side][price] += quantity
@@ -67,6 +67,7 @@ class DetailedLob:
 
     self.mbo[symbol_id][side][price][order_id][0] -= itch_message.Quantity  # ExecutedQuantity
     self.mbp[symbol_id][side][price] -= itch_message.Quantity  # ExecutedQuantity
+
     if self.mbo[symbol_id][side][price][order_id][0] == 0:
       del self.mbo[symbol_id][side][price][order_id]
       if len(self.mbo[symbol_id][side][price]) == 0:
@@ -94,6 +95,7 @@ class DetailedLob:
       i = 0
       k = 0
       prices = self.sorted_prices[symbol][key]
+
       while i < n:
         try:
           price_key = prices[k]

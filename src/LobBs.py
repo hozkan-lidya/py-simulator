@@ -1,8 +1,8 @@
 import sys, os.path
 src_dir = (os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 sys.path.append(src_dir)
-from DetailedLob import DetailedLob
 
+from DetailedLob import DetailedLob
 from collections import OrderedDict
 
 class LobBs:
