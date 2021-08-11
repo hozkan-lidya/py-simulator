@@ -1,7 +1,4 @@
 
-# from sortedcontainers import SortedList, SortedSet, SortedDict
-# from collections import OrderedDict
-# import pandas as pd
 import src.aux as aux
 from src.SimulatorV10 import simulatorV10
 from src.LobBs import LobBs
@@ -60,28 +57,28 @@ for row_iter in data.iloc[:, :].itertuples(index=True):
 
   # ############## Algo Supervisor ##################
   # BEGINNING OF DAY
-  if (algo_open is False) and (circuit_breaker is False) and row_iter.Rank == -14 and row_iter.hour == 10:
+  if (not algo_open) and (not circuit_breaker) and row_iter.Rank == -14 and row_iter.hour == 10:
     algo_open = True
 
   # CIRCUIT BREAKER - SESSION MESSAGES
   if row_iter.MessageType == 'O':
-    if circuit_breaker is False and row_iter.Rank > -14 and row_iter.Rank < -1:
+    if (not circuit_breaker) and row_iter.Rank > -14 and row_iter.Rank < -1:
       # print(count,'CIRCUIT BREAKER STARTED', count, symbol_iter, day_iter)
       circuit_breaker = True
       algo_open = False
 
-    if circuit_breaker is True and row_iter.Rank == -14:
+    if circuit_breaker and row_iter.Rank == -14:
       # print(count,'CIRCUIT BREAKER FINISHED', count, symbol_iter, day_iter)
       circuit_breaker = False
       algo_open = True
 
   # END OF DAY
-  if (algo_open is True) and (row_iter.hour == 17 and row_iter.minute >= 55):
+  if algo_open and row_iter.hour == 17 and row_iter.minute >= 55:
     # print(count,'End of Day')
     algo_open = False
 
     # END OF DAY CANCELING OUTSTANDING MM ORDERS
-    for mm_row in sim.mm.itertuples(index=True):
+    for mm_row in sim.mm.itertuples(index=False):
       if (mm_row.mm_size > 0):
         sim.send_order(row_iter, algono, symbol_iter, mm_row.mm_side, 0, 0, 'gtd', 'cancel',
                  mm_row.mm_orderid)

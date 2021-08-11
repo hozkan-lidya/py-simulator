@@ -87,7 +87,12 @@ def create_first_orders_of_eq(book, no_of_levels, theo_price_diff_bid, theo_pric
   ask_order_dict = dict(zip(ask_prices_list_eq_order, ask_quantities_list))
 
   return bid_order_dict, ask_order_dict
-def detect_changes_in_books(book_to_cont, data_eq_or_fut, epoch_to_start, epoch_to_stop, side):
+def detect_changes_in_books(book_to_cont,
+                            data_eq_or_fut,
+                            epoch_to_start,
+                            epoch_to_stop,
+                            side,
+                            tz=pytz.timezone('Europe/Istanbul')):
   data = data_eq_or_fut[
     (data_eq_or_fut['epoch_nano'] > epoch_to_start) & (data_eq_or_fut['epoch_nano'] <= epoch_to_stop)]
   data_collect = []
@@ -101,7 +106,7 @@ def detect_changes_in_books(book_to_cont, data_eq_or_fut, epoch_to_start, epoch_
       price_to_collect = first_price
       quantity_to_collect = list(book_to_cont.details.mbp[side].values())[0]
       time_to_collect = row.epoch_nano
-      date_to_collect = datetime.fromtimestamp(row.epoch_nano / 1e9, tz=pytz.timezone('Europe/Istanbul'))
+      date_to_collect = datetime.fromtimestamp(row.epoch_nano / 1e9, tz=tz)
       data_collect.append({'symbol': symbol, 'price': price_to_collect,
                   'quantity': quantity_to_collect, 'time': time_to_collect, 'date': date_to_collect})
     prev_price = first_price
@@ -120,7 +125,7 @@ def find_order_id_to_follow(order, book, order_id):
   index_to_use = list(book.details.mbo[side_to_follow][price]).index(order_id) - 1
   id_to_follow = list(book.details.mbo[side_to_follow][price])[index_to_use]
   return side, price, id_to_follow
-def detect_tob_changes(data, symbol, day):
+def detect_tob_changes(data, symbol, day,tz=pytz.timezone('Europe/Istanbul')):
   data_collect = []
   prev_bid_price = 0
   prev_ask_price = 0
@@ -143,7 +148,7 @@ def detect_tob_changes(data, symbol, day):
       if (prev_bid_price != bid_price) or (prev_ask_price != ask_price):
         bid_quantity = list(book.details.mbp[BUY].values())[0]
         ask_quantity = list(book.details.mbp[ SELL].values())[0]
-        date_to_collect = datetime.fromtimestamp(row_iter.epoch_nano / 1e9, tz=pytz.timezone('Europe/Istanbul'))
+        date_to_collect = datetime.fromtimestamp(row_iter.epoch_nano / 1e9, tz=tz)
         data_collect.append({'symbol': symbol, 'day': day, 'bid_quantity': bid_quantity, 'bid_price': bid_price,
                     'ask_price': ask_price, 'ask_quantity': ask_quantity,
                     'time': row_iter.epoch_nano, 'date': date_to_collect})
@@ -204,9 +209,10 @@ def data_merger(path, day, symbol_list):
     merged = merged.reset_index(drop=True)
   return merged
 
-def prepare_symbol_data(path, day, symbol) -> pd.DataFrame:
+def prepare_symbol_data(path, day, symbol,
+                        tz=pytz.timezone('Europe/Istanbul')) -> pd.DataFrame:
   data = aux.get_equity_data_new(path, day, symbol)
-  data['date'] = [datetime.fromtimestamp(i / 1e9, tz=pytz.timezone('Europe/Istanbul')) for i in data.epoch_nano]
+  data['date'] = [datetime.fromtimestamp(i / 1e9, tz=tz) for i in data.epoch_nano]
   data['day'] = day
   data['hour'] = data['date'].dt.hour
   data['minute'] = data['date'].dt.minute
